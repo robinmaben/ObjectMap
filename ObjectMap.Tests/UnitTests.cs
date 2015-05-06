@@ -18,24 +18,44 @@ namespace ObjectMap.Tests
         [TestMethod]
         public void WithCtorDependencies()
         {
-            ObjectMap.Register<IMock, Mock2>();
-            ObjectMap.Register<IDependency, Dependency>();
+            ObjectMap.Register<IMock, Mock>();
+            ObjectMap.Register<IMock2, Mock2>();
 
-            var result = ObjectMap.Get<IMock>();
+            var result = ObjectMap.Get<IMock2>();
 
             Assert.IsInstanceOfType(result, typeof (Mock2));
         }
+
+        [TestMethod]
+        public void WithDependentProperties()
+        {
+            ObjectMap.Register<IMock, Mock>();
+            ObjectMap.Register<IMock2, Mock2>();
+
+            ObjectMap.InjectAllPropertiesofType<IDependency, Dependency>();
+
+            var result = ObjectMap.Get<IMock2>();
+
+            Assert.IsInstanceOfType(result, typeof(Mock2));
+            Assert.IsNotNull(result.Dependency);
+        }
     }
 
-    public class Mock2 : IMock
+    public class Mock2 : IMock2
     {
+        public IMock Mock { get; set; }
         public IDependency Dependency { get; set; }
 
-        public Mock2(IDependency dependency)
+        public Mock2(IMock mock)
         {
-            Dependency = dependency;
+            Mock = mock;
         }
-    }   
+    }
+
+    public interface IMock2
+    {
+        IDependency Dependency { get; set; }
+    }
 
     public class Mock : IMock
     {

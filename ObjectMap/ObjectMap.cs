@@ -1,13 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
+//TODO: Nuget Package
+//TODO: Separate classes into individual files and utilities
 namespace ObjectMap
 {
     public class ObjectMap
     {
         private static readonly ObjectMap Instance;
         private readonly Dictionary<Type, Func<object>> _objectProviders = new Dictionary<Type, Func<object>>();
+        private readonly Dictionary<Type, Func<object>> _objectInjectionInstructions = new Dictionary<Type, Func<object>>();
         
         static ObjectMap()
         {
@@ -24,12 +28,22 @@ namespace ObjectMap
             Instance._objectProviders[typeof(TRequest)] = () => provider;
         }
 
-        public static TRequest Get<TRequest>() where TRequest : class
+        public static void InjectAllPropertiesofType<TInjectable>(Func<TInjectable> objectProvider = null) where TInjectable : class
         {
-            return GetInstanceProvider(typeof(TRequest)) as TRequest;
+            Instance._objectInjectionInstructions[typeof (TInjectable)] = objectProvider ?? (() => CreateInstance(typeof(TInjectable)) as TInjectable);
         }
 
-        private static object GetInstanceProvider(Type requestedType)
+        public static void InjectAllPropertiesofType<TInjectable, TInject>() where TInjectable : class where TInject : class , TInjectable
+        {
+            Instance._objectInjectionInstructions[typeof (TInjectable)] = () => CreateInstance(typeof (TInject));
+        }
+
+        public static TRequest Get<TRequest>() where TRequest : class
+        {
+            return GetInstance(typeof(TRequest)) as TRequest;
+        }
+
+        public static object GetInstance(Type requestedType)
         {
             Func<object> objectProvider;
 
@@ -40,19 +54,51 @@ namespace ObjectMap
 
         private static object CreateInstance(Type type)
         {
-            var constructor =
-                type.GetConstructors()
-                    .FirstOrDefault(ctor => ctor
-                                .GetParameters()
-                                .All(paramInfo => Instance._objectProviders.ContainsKey(paramInfo.ParameterType)));
+            var constructor = FindSuitableConstructor(type);
+            var instance = CreateInstance(type, constructor);
+            
+            TryInjectDependencies(instance, type);
 
-            return constructor != null
-                ? constructor.Invoke(constructor.GetParameters().Select(paramInfo => GetInstanceProvider(paramInfo.GetType())).ToArray())
-                : null;
+            return instance;
+        }
 
-            //TODO: Use public parameterless ctor?
-            //TODO: Fill dependent Properties on requested type
-            //TODO: Prevent circular dependencies
+        private static object CreateInstance(Type type, ConstructorInfo constructor)
+        {
+            var instance = constructor != null
+                ? constructor.Invoke(
+                    constructor.GetParameters().Select(paramInfo => GetInstance(paramInfo.GetType())).ToArray())
+                : Activator.CreateInstance(type);
+            
+            //TODO: Handle cyclic dependencies
+            
+            return instance;
+        }
+
+        private static ConstructorInfo FindSuitableConstructor(Type type)
+        {
+            return type.GetConstructors()
+                       .FirstOrDefault(ctor => ctor.GetParameters()
+                                                   .All(paramInfo => Instance._objectProviders.ContainsKey(paramInfo.ParameterType)));
+        }
+
+        private static void TryInjectDependencies(object instance, IReflect instanceType)
+        {
+            foreach (
+                var propertyInfo in
+                    instanceType.GetProperties(BindingFlags.Public | BindingFlags.Instance |
+                                               BindingFlags.FlattenHierarchy))
+            {
+                if (propertyInfo.CanWrite
+                    &&
+                    Instance._objectInjectionInstructions.ContainsKey(propertyInfo.PropertyType))
+
+                    //TODO: Handle cyclic dependencies
+                    if (propertyInfo.GetValue(instance) == null)
+                    {
+                        propertyInfo.SetValue(instance,
+                            Instance._objectInjectionInstructions[propertyInfo.PropertyType].Invoke());
+                    }
+            }
         }
     }
 }

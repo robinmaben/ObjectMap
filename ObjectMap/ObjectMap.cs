@@ -4,38 +4,48 @@ using System.Linq;
 using System.Reflection;
 
 //TODO: Nuget Package
-//TODO: Separate classes into individual files and utilities
+
 namespace ObjectMap
 {
     public class ObjectMap
     {
-        private static readonly ObjectMap Instance;
-        private readonly Dictionary<Type, Func<object>> _objectProviders = new Dictionary<Type, Func<object>>();
-        private readonly Dictionary<Type, Func<object>> _objectInjectionInstructions = new Dictionary<Type, Func<object>>();
+        internal static readonly ObjectMap Instance;
+        internal Dictionary<Type, ObjectProvider> ProviderRegistry { get; private set; }
+        internal HashSet<Type> InjectablesRegistry { get; private set; }
         
         static ObjectMap()
         {
             Instance = new ObjectMap();
         }
 
-        public static void Register<TRequest, TObj>() where TObj : class, TRequest where TRequest : class
+        private ObjectMap()
         {
-            Instance._objectProviders[typeof (TRequest)] = () => CreateInstance(typeof (TObj));
+            ProviderRegistry = new Dictionary<Type, ObjectProvider>();
+            InjectablesRegistry = new HashSet<Type>();
         }
 
-        public static void Register<TRequest>(Func<TRequest> provider)
+        public static Type Register<TRequest, TObj>() where TObj : class, TRequest where TRequest : class
         {
-            Instance._objectProviders[typeof(TRequest)] = () => provider;
+            return RegisterProvider(typeof (TRequest), () => TryCreateInstance(typeof (TObj)));
         }
 
-        public static void InjectAllPropertiesofType<TInjectable>(Func<TInjectable> objectProvider = null) where TInjectable : class
+        public static Type Register<TRequest>(Func<object> provider)
         {
-            Instance._objectInjectionInstructions[typeof (TInjectable)] = objectProvider ?? (() => CreateInstance(typeof(TInjectable)) as TInjectable);
+            return RegisterProvider(typeof (TRequest), provider);
         }
 
-        public static void InjectAllPropertiesofType<TInjectable, TInject>() where TInjectable : class where TInject : class , TInjectable
+        private static Type RegisterProvider(Type requestedType, Func<object> provider)
         {
-            Instance._objectInjectionInstructions[typeof (TInjectable)] = () => CreateInstance(typeof (TInject));
+            Instance.ProviderRegistry[requestedType] = new ObjectProvider(provider);
+            return requestedType;
+        }
+
+        public static Type InjectAllPropertiesofType<TInjectable>()
+        {
+            var injectableType = typeof(TInjectable);
+            injectableType.InjectAllPropertiesofType();
+
+            return injectableType;
         }
 
         public static TRequest Get<TRequest>() where TRequest : class
@@ -45,60 +55,52 @@ namespace ObjectMap
 
         public static object GetInstance(Type requestedType)
         {
-            Func<object> objectProvider;
+            ObjectProvider objectProvider;
 
-            return Instance._objectProviders.TryGetValue(requestedType, out objectProvider)
-                ? objectProvider.Invoke()
+            return Instance.ProviderRegistry.TryGetValue(requestedType, out objectProvider)
+                ? objectProvider.GetInstance()
                 : null;
         }
 
-        private static object CreateInstance(Type type)
+        internal static object TryCreateInstance(Type type)
         {
-            var constructor = FindSuitableConstructor(type);
+            var constructor = type.GetConstructors()
+                .FirstOrDefault(ctor => ctor.GetParameters()
+                    .All(paramInfo => Instance.ProviderRegistry.ContainsKey(paramInfo.ParameterType)));
+
             var instance = CreateInstance(type, constructor);
-            
+
             TryInjectDependencies(instance, type);
 
             return instance;
         }
 
-        private static object CreateInstance(Type type, ConstructorInfo constructor)
+        internal static void TryInjectDependencies(object instance, IReflect instanceType = null)
         {
-            var instance = constructor != null
-                ? constructor.Invoke(
-                    constructor.GetParameters().Select(paramInfo => GetInstance(paramInfo.GetType())).ToArray())
-                : Activator.CreateInstance(type);
-            
-            //TODO: Handle cyclic dependencies
-            
-            return instance;
-        }
+            instanceType = instanceType ?? instance.GetType();
 
-        private static ConstructorInfo FindSuitableConstructor(Type type)
-        {
-            return type.GetConstructors()
-                       .FirstOrDefault(ctor => ctor.GetParameters()
-                                                   .All(paramInfo => Instance._objectProviders.ContainsKey(paramInfo.ParameterType)));
-        }
-
-        private static void TryInjectDependencies(object instance, IReflect instanceType)
-        {
-            foreach (
-                var propertyInfo in
+            foreach (var propertyInfo in
                     instanceType.GetProperties(BindingFlags.Public | BindingFlags.Instance |
                                                BindingFlags.FlattenHierarchy))
             {
                 if (propertyInfo.CanWrite
-                    &&
-                    Instance._objectInjectionInstructions.ContainsKey(propertyInfo.PropertyType))
-
+                    && Instance.InjectablesRegistry.Contains(propertyInfo.PropertyType))
                     //TODO: Handle cyclic dependencies
                     if (propertyInfo.GetValue(instance) == null)
                     {
-                        propertyInfo.SetValue(instance,
-                            Instance._objectInjectionInstructions[propertyInfo.PropertyType].Invoke());
+                        propertyInfo.SetValue(instance, GetInstance(propertyInfo.PropertyType));
                     }
             }
+        }
+
+        private static object CreateInstance(Type type, ConstructorInfo constructor)
+        {
+            if (constructor == null) return Activator.CreateInstance(type);
+
+            var ctorParams = constructor.GetParameters().Select(paramInfo => GetInstance(paramInfo.GetType())).ToArray();
+            return constructor.Invoke(ctorParams);
+
+            //TODO: Handle cyclic dependencies
         }
     }
 }

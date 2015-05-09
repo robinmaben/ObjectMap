@@ -3,7 +3,7 @@
 namespace ObjectMap.Tests
 {
     [TestClass]
-    public class UnitTests
+    public class BasicTests
     {
         [TestMethod]
         public void WithoutDependency()
@@ -32,7 +32,8 @@ namespace ObjectMap.Tests
             ObjectMap.Register<IMock, Mock>();
             ObjectMap.Register<IMock2, Mock2>();
 
-            ObjectMap.InjectAllPropertiesofType<IDependency, Dependency>();
+            ObjectMap.Register<IDependency, Dependency>().InjectAllPropertiesofType();
+            ObjectMap.InjectAllPropertiesofType<IDependency>();
 
             var result = ObjectMap.Get<IMock2>();
 
@@ -40,40 +41,4 @@ namespace ObjectMap.Tests
             Assert.IsNotNull(result.Dependency);
         }
     }
-
-    public class Mock2 : IMock2
-    {
-        public IMock Mock { get; set; }
-        public IDependency Dependency { get; set; }
-
-        public Mock2(IMock mock)
-        {
-            Mock = mock;
-        }
-    }
-
-    public interface IMock2
-    {
-        IDependency Dependency { get; set; }
-    }
-
-    public class Mock : IMock
-    {
-    
-    }
-
-    public class Dependency : IDependency
-    {
-        
-    }
-
-    public interface IMock
-    {
-    }
-
-    public interface IDependency
-    {
-    }
-
-    
 }

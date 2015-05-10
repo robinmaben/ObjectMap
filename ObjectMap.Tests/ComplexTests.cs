@@ -10,14 +10,13 @@ namespace ObjectMap.Tests
         {
             ObjectMap.Register<IMock, Mock>();
             ObjectMap.Register<IMock2, Mock2>();
-            ObjectMap.InjectAllPropertiesofType<IDependency>();
 
             var result = ObjectMap.Get<IMock2>();
             Assert.IsInstanceOfType(result, typeof(Mock2));
             Assert.IsNull(result.Dependency);
 
             ObjectMap.Register<IDependency, Dependency>();
-            result.EnsureDependenciesInjected();
+            result.TryInjectDependencies();
             
             Assert.IsNotNull(result.Dependency);
         }

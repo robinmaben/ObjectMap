@@ -31,10 +31,8 @@ namespace ObjectMap.Tests
         {
             ObjectMap.Register<IMock, Mock>();
             ObjectMap.Register<IMock2, Mock2>();
-
-            ObjectMap.Register<IDependency, Dependency>().InjectAllPropertiesofType();
-            ObjectMap.InjectAllPropertiesofType<IDependency>();
-
+            ObjectMap.Register<IDependency, Dependency>();
+            
             var result = ObjectMap.Get<IMock2>();
 
             Assert.IsInstanceOfType(result, typeof(Mock2));

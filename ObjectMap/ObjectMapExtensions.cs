@@ -4,13 +4,7 @@ namespace ObjectMap
 {
     public static class ObjectMapExtensions
     {
-        public static Type InjectAllPropertiesofType(this Type injectableType)
-        {
-            ObjectMap.Instance.InjectablesRegistry.Add(injectableType);
-            return injectableType;
-        }
-
-        public static void EnsureDependenciesInjected(this object @object)
+        public static void TryInjectDependencies(this object @object)
         {
             ObjectMap.TryInjectDependencies(@object);
         }

@@ -73,6 +73,7 @@ namespace ObjectMap
             {
                 if (objectProvider.LifecycleOptions == LifecycleOptions.Singleton)
                 {
+                    return requestedType; //If Singleton do not register a new provider
                 }
             }
 

@@ -68,6 +68,14 @@ namespace ObjectMap
 
         private static Type RegisterProvider(Type requestedType, Func<object> provider)
         {
+            ObjectProvider objectProvider;
+            if (Instance.ProviderRegistry.TryGetValue(requestedType, out objectProvider))
+            {
+                if (objectProvider.LifecycleOptions == LifecycleOptions.Singleton)
+                {
+                }
+            }
+
             Instance.ProviderRegistry[requestedType] = new ObjectProvider(provider);
             return requestedType;
         }

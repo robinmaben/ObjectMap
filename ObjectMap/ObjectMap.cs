@@ -11,7 +11,8 @@ namespace ObjectMap
     {
         internal static readonly ObjectMap Instance;
         internal Dictionary<Type, ObjectProvider> ProviderRegistry { get; private set; }
-        
+        internal readonly HashSet<IReflect> InjectionChain = new HashSet<IReflect>();
+
         static ObjectMap()
         {
             Instance = new ObjectMap();
@@ -46,10 +47,10 @@ namespace ObjectMap
                 : null;
         }
 
-        //TODO: Handle cyclic dependencies
         public static void TryInjectDependencies(object instance, IReflect instanceType = null)
         {
             instanceType = instanceType ?? instance.GetType();
+            Instance.InjectionChain.Add(instanceType);
 
             var writableNonInitializedDependencies =
                 from property in instanceType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
@@ -62,8 +63,20 @@ namespace ObjectMap
 
             foreach (var writableProperty in writableNonInitializedDependencies)
             {
-                writableProperty.SetValue(instance, GetInstance(writableProperty.PropertyType));
+                if (Instance.InjectionChain.Contains(writableProperty.PropertyType))
+                {
+                    continue;
+                    /* Handling cyclic dependencies - 
+                     * In it's simplest form, if A has dependency B and B has a dependency A, we have an infinite loop.
+                     * To avoid this, if A is being constructed we simply skip injecting A anywhere down the graph.
+                     */
+                }
+
+                var dependency = GetInstance(writableProperty.PropertyType);
+                writableProperty.SetValue(instance, dependency);
             }
+
+            Instance.InjectionChain.Remove(instanceType);
         }
 
         private static Type RegisterProvider(Type requestedType, Func<object> provider)

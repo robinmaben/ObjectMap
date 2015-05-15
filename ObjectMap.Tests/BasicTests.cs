@@ -1,21 +1,21 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using NUnit.Framework;
 
 namespace ObjectMap.Tests
 {
-    [TestClass]
+    [TestFixture]
     public class BasicTests
     {
-        [TestMethod]
+        [Test]
         public void WithoutDependency()
         {
             ObjectMap.Register<IMock, Mock>();
             var result = ObjectMap.Get<IMock>();
 
             Assert.IsNotNull(result);
-            Assert.IsInstanceOfType(result, typeof (Mock));
+            Assert.IsInstanceOf<Mock>(result);
         }
 
-        [TestMethod]
+        [Test]
         public void WithCtorDependencies()
         {
             ObjectMap.Register<IMock, Mock>();
@@ -23,10 +23,10 @@ namespace ObjectMap.Tests
 
             var result = ObjectMap.Get<IMock2>();
 
-            Assert.IsInstanceOfType(result, typeof (Mock2));
+            Assert.IsInstanceOf<Mock2>(result);
         }
 
-        [TestMethod]
+        [Test]
         public void WithDependentProperties()
         {
             ObjectMap.Register<IMock, Mock>();
@@ -35,7 +35,7 @@ namespace ObjectMap.Tests
             
             var result = ObjectMap.Get<IMock2>();
 
-            Assert.IsInstanceOfType(result, typeof(Mock2));
+            Assert.IsInstanceOf<Mock2>(result);
             Assert.IsNotNull(result.Dependency);
         }
     }

@@ -1,18 +1,18 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using NUnit.Framework;
 
 namespace ObjectMap.Tests
 {
-    [TestClass]
+    [TestFixture]
     public class ComplexTests
     {
-        [TestMethod]
+        [Test]
         public void WithLateRegsiteredDependencies()
         {
             ObjectMap.Register<IMock, Mock>();
             ObjectMap.Register<IMock2, Mock2>();
 
             var result = ObjectMap.Get<IMock2>();
-            Assert.IsInstanceOfType(result, typeof(Mock2));
+            Assert.IsInstanceOf<Mock2>(result);
             Assert.IsNull(result.Dependency);
 
             ObjectMap.Register<IDependency, Dependency>();
@@ -21,7 +21,7 @@ namespace ObjectMap.Tests
             Assert.IsNotNull(result.Dependency);
         }
 
-        [TestMethod]
+        [Test]
         public void TestLifecycleOptionsPerRequest()
         {
             ObjectMap.Register<IMock, Mock>().PerRequest();
@@ -32,7 +32,7 @@ namespace ObjectMap.Tests
             Assert.AreNotSame(result2, result);
         }
 
-        [TestMethod]
+        [Test]
         public void TestLifecycleOptionsSingleton()
         {
             ObjectMap.Register<IMock, Mock>().Singleton();
@@ -43,7 +43,7 @@ namespace ObjectMap.Tests
             Assert.AreSame(result2, result);
         }
 
-        [TestMethod]
+        [Test]
         public void TestLifecycleOptionsPerRequestDependency()
         {
             ObjectMap.Register<IMock, Mock>();
@@ -58,7 +58,7 @@ namespace ObjectMap.Tests
             Assert.AreNotSame(result2.Dependency, result.Dependency);
         }
 
-        [TestMethod]
+        [Test]
         public void TestLifecycleOptionsSingletonDependency()
         {
             ObjectMap.Register<IMock, Mock>();

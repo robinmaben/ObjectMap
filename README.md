@@ -1,7 +1,9 @@
 # ObjectMap
 ObjectMap is a simple **IoC container for .NET**. 
 
-[![Build Status](https://travis-ci.org/robinmaben/ObjectMap.svg?branch=master)](https://travis-ci.org/robinmaben/ObjectMap)
+[![Build Status](https://travis-ci.org/robinmaben/ObjectMap.svg?branch=master)](https://travis-ci.org/robinmaben/ObjectMap) 
+
+[![NuGet version](https://badge.fury.io/nu/ObjectMap.svg)](http://badge.fury.io/nu/ObjectMap)
 
 It started out as a [practice exercise](http://blog.mabenrob.in/post/objetmap-reinventing-the-wheel-learning-by-synthesis) and an excuse to try out features of the **C# 6 preview**.
 

@@ -11,7 +11,7 @@ namespace ObjectMap
     {
         internal static readonly ObjectMap Instance;
         internal Dictionary<Type, ObjectProvider> ProviderRegistry { get; private set; }
-        internal readonly HashSet<IReflect> InjectionChain = new HashSet<IReflect>();
+        internal readonly Stack<Type> InjectionStack = new Stack<Type>();
 
         static ObjectMap()
         {
@@ -47,36 +47,36 @@ namespace ObjectMap
                 : null;
         }
 
-        public static void TryInjectDependencies(object instance, IReflect instanceType = null)
+        public static void TryInjectDependencies(object instance, Type instanceType = null)
         {
             instanceType = instanceType ?? instance.GetType();
-            Instance.InjectionChain.Add(instanceType);
+            Instance.InjectionStack.Push(instanceType);
 
-            var writableNonInitializedDependencies =
-                from property in instanceType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                where
-                    property.CanWrite
-                    && property.PropertyType.IsInterface
-                    && Instance.ProviderRegistry.ContainsKey(property.PropertyType)
-                    && property.GetValue(instance) == null
-                select property;
-
-            foreach (var writableProperty in writableNonInitializedDependencies)
+            try
             {
-                if (Instance.InjectionChain.Contains(writableProperty.PropertyType))
+                var writableNonInitializedDependencies =
+                    from property in instanceType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    where
+                        property.CanWrite
+                        && Instance.ProviderRegistry.ContainsKey(property.PropertyType)
+                        && property.GetValue(instance) == null
+                    select property;
+
+                foreach (var writableProperty in writableNonInitializedDependencies)
                 {
-                    continue;
-                    /* Handling cyclic dependencies - 
-                     * In it's simplest form, if A has dependency B and B has a dependency A, we have an infinite loop.
-                     * To avoid this, if A is being constructed we simply skip injecting A anywhere down the graph.
-                     */
+                    if (Instance.InjectionStack.Any(dependent => dependent.IsEquivalentTo(writableProperty.PropertyType)))
+                    {
+                        continue;
+                    }
+
+                    var dependency = GetInstance(writableProperty.PropertyType);
+                    writableProperty.SetValue(instance, dependency);
                 }
-
-                var dependency = GetInstance(writableProperty.PropertyType);
-                writableProperty.SetValue(instance, dependency);
             }
-
-            Instance.InjectionChain.Remove(instanceType);
+            finally
+            {
+                Instance.InjectionStack.Pop();
+            }
         }
 
         private static Type RegisterProvider(Type requestedType, Func<object> provider)

@@ -66,6 +66,7 @@
   </Choose>
   <ItemGroup>
     <Compile Include="ComplexTests.cs" />
+    <Compile Include="CyclicDependency.cs" />
     <Compile Include="Dependency.cs" />
     <Compile Include="IDependency.cs" />
     <Compile Include="IMock.cs" />

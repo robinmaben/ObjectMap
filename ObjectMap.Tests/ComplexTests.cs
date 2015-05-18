@@ -71,5 +71,33 @@ namespace ObjectMap.Tests
 
             Assert.AreSame(result2.Dependency, result.Dependency);
         }
+
+        [Test]
+        public void TestCyclicDependecyAvertedSimple()
+        {
+            ObjectMap.Register<CyclicDependency1, CyclicDependency1>().PerRequest();
+
+            var instance1 = ObjectMap.Get<CyclicDependency1>();
+
+            Assert.IsNotNull(instance1);
+            Assert.IsNull(instance1.SelfDependency);
+        }
+
+        [Test]
+        public void TestCyclicDependecyAverted()
+        {
+            ObjectMap.Register<CyclicDependency1, CyclicDependency1>().PerRequest();
+            ObjectMap.Register<CyclicDependency2, CyclicDependency2>().PerRequest();
+
+            var instance1 = ObjectMap.Get<CyclicDependency1>();
+
+            Assert.IsNotNull(instance1);
+            Assert.IsNotNull(instance1.Dependency);
+
+            var instance2 = ObjectMap.Get<CyclicDependency1>();
+
+            Assert.IsNotNull(instance2);
+            Assert.IsNotNull(instance2.Dependency);
+        }
     }
 }

@@ -1,2 +1,9 @@
 language: csharp
 solution: ObjectMap.sln
+
+before_install:
+  - sudo apt-get install nunit-console
+before_script:
+  - nuget restore solution-name.sln
+after_script:
+  - nunit-console ObjectMap.Tests/bin/Release/ObjectMap.Tests.dll

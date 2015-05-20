@@ -7,7 +7,14 @@ ObjectMap is a simple **IoC container for .NET**.
 
 It started out as a [practice exercise](http://blog.mabenrob.in/post/objetmap-reinventing-the-wheel-learning-by-synthesis) and an excuse to try out features of the **C# 6 preview**.
 
-Simple (although contrived) usage examples -
+**Key Features -**
+1. Auto-inject constructor dependencies
+2. Auto-inject property dependencies
+3. Supports lazy instantiation
+4. Lifecycle options Singleton, PerRequest (default being LastCreated)
+
+
+**Simple (although contrived) usage examples -**
 
 <pre>
 <code>
@@ -15,7 +22,7 @@ public class Logger : ILogger
 {
     public Logger(ILogSettings logSettings)
     {
-    
+        
     }
     
     ILogFormat LogFormat{ get; set; }

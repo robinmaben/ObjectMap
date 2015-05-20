@@ -8,6 +8,7 @@ ObjectMap is a simple **IoC container for .NET**.
 It started out as a [practice exercise](http://blog.mabenrob.in/post/objetmap-reinventing-the-wheel-learning-by-synthesis) and an excuse to try out features of the **C# 6 preview**.
 
 **Key Features -**
+
 1. Auto-inject constructor dependencies
 2. Auto-inject property dependencies
 3. Supports lazy instantiation
@@ -15,6 +16,16 @@ It started out as a [practice exercise](http://blog.mabenrob.in/post/objetmap-re
 
 
 **Simple (although contrived) usage examples -**
+
+`ObjectMap.Register<ILogFormat, LogFormat>();`
+
+`ObjectMap.Register<ILogSettings>(new LogSettings());`
+
+`ObjectMap.Register<ILogFile>(() => new LogFile()); //Lazy`
+
+`ObjectMap.Register<ILogger, Logger>().Singleton(); //default lifecycle option is .LastCreated()`
+
+`ObjectMap.Register<ILogger, Logger>().PerRequest();`
 
 <pre>
 <code>
@@ -35,13 +46,3 @@ public class LogSettings : ILogSettings
 
 </code>
 </pre>
-
-`ObjectMap.Register<ILogFormat, LogFormat>();`
-
-`ObjectMap.Register<ILogSettings>(new LogSettings());`
-
-`ObjectMap.Register<ILogFile>(() => new LogFile()); //Lazy`
-
-`ObjectMap.Register<ILogger, Logger>().Singleton(); //default lifecycle option is .LastCreated()`
-
-`ObjectMap.Register<ILogger, Logger>().PerRequest();`

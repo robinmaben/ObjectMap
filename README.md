@@ -13,6 +13,7 @@ It started out as a [practice exercise](http://blog.mabenrob.in/post/objetmap-re
 2. Auto-inject property dependencies
 3. Supports lazy instantiation
 4. Lifecycle options Singleton, PerRequest (default being LastCreated)
+5. **Handles Cyclic Dependencies**
 
 
 **Simple (although contrived) usage examples -**

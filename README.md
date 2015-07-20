@@ -15,21 +15,19 @@ It started out as a [practice exercise](http://blog.mabenrob.in/post/objetmap-re
 4. Lifecycle options Singleton, PerRequest (default being LastCreated)
 5. **Handles Cyclic Dependencies**
 
-
 **Simple (although contrived) usage examples -**
 
-`ObjectMap.Register<ILogFormat, LogFormat>();`
+```csharp
+ObjectMap.Register<ILogFormat, LogFormat>();
 
-`ObjectMap.Register<ILogSettings>(new LogSettings());`
+ObjectMap.Register<ILogSettings>(new LogSettings());
 
-`ObjectMap.Register<ILogFile>(() => new LogFile()); //Lazy`
+ObjectMap.Register<ILogFile>(() => new LogFile()); //Lazy
 
-`ObjectMap.Register<ILogger, Logger>().Singleton(); //default lifecycle option is .LastCreated()`
+ObjectMap.Register<ILogger, Logger>().Singleton(); //default lifecycle option is .LastCreated()
 
-`ObjectMap.Register<ILogger, Logger>().PerRequest();`
+ObjectMap.Register<ILogger, Logger>().PerRequest();
 
-<pre>
-<code>
 public class Logger : ILogger
 {
     public Logger(ILogSettings logSettings)
@@ -45,5 +43,4 @@ public class LogSettings : ILogSettings
     ILogFile LogFile { get; set; }
 }
 
-</code>
-</pre>
+```
